@@ -1,103 +1,136 @@
-import Image from "next/image";
+//sab sy phly useEffect chly ga or wo data fetch kry ga server sy yani jo movie 1st page pr nzr ati hai search kia bgair wo useEffect ki wja sy nzr ati hai
+
+
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import MovieCard from '../components/MovieCard'; // 👈 Use relative path instead of alias
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [movies, setMovies] = useState([]);
+  const [query, setQuery] = useState('');
+  const [error, setError] = useState('');
+  console.log('API KEY:', process.env.NEXT_PUBLIC_TMDB_API_KEY);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+  const fetchTrending = async () => {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`);
+      const data = await res.json();
+      setMovies(data.results || []); // safe fallback
+    } catch (err) {
+      // console.error('Error fetching trending movies:', err);
+      setError('Failed to load movies.');
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault(); // movie ka name likh kr jab enter krty hai tu e.preventDefault() page ko reload hony sy bchata ha
+    if (!query.trim()) return; //trim use hota ha extra space khtm krny k lia
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&query=${query}`);
+      const data = await res.json();
+      setMovies(data.results || []);
+    } catch (err) {
+      console.error('Error searching movies:', err);
+      setError('Failed to search movies.');
+    }
+  };
+
+  useEffect(() => {
+    fetchTrending();
+  }, []);
+
+  return (
+    <main className="p-4 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold text-center mb-4">🎬 Movie Explorer</h1>
+
+
+      <form onSubmit={handleSearch} className="mb-6">
+        <input
+          type="text"
+          placeholder="Search movies..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="border-4 border-yellow-400 bg-gray-300 p-2 ml-115 rounded-2xl"
+        />
+      </form>
+
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {Array.isArray(movies) && movies.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {movies.map((movie) => (
+            <MovieCard key={movie.id} send={movie} />
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      ) : (
+        <p>No movies found.</p>
+      )}
+    </main>
   );
 }
+
+
+// "use client"
+// import {useState,useEffect} from "react"
+// import MovieCard from '../components/MovieCard'
+
+// export default function Home(){
+// const [put,setPut]=useState("")
+// const [receive,setReceive]=useState([])
+// const [error,setError]=useState('')
+
+// const firstLoad=async()=>{
+
+//   try {
+//     const q1= await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`);
+//     const q2=await q1.json()
+//     setReceive(q2.results || []);
+//   } catch (error) {
+//     setError('something went wrong')
+    
+//   }
+
+// }
+
+// const runFunction=async(e)=>{
+//   e.preventDefault();
+
+//   if(!put.trim()) return;
+//   try {
+//     const q1= await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&query=${put}`);
+//     const q2=await q1.json()
+//     setReceive(q2.results || [])
+//   } catch (error) {
+//     setError('movie not found')
+    
+//   }
+// }
+// useEffect(()=>{
+//   firstLoad()
+// },[])
+
+
+//   return(
+//     <main>
+//       <form onSubmit={runFunction}>
+//         <input 
+//         type="text"
+//         placeholder="write movie name"
+//         value={put}
+//         onChange={(e)=>setPut(e.target.value)}
+//         />
+//       </form>
+//       <div>
+//         {error && <p>{error}</p>}
+//       </div>
+      
+//         {Array.isArray(receive) && receive.length>0 ? (receive.map((next)=>(
+//            <MovieCard key={next.id} send={next} />
+//         ))):( <p> movie not found</p>
+//       )}
+//     </main>
+//   )
+// } 
